@@ -1,0 +1,366 @@
+---
+// Importamos los videos de la carpeta assets/videos
+const videoModules = import.meta.glob<{ default: string }>('../assets/videos/*.mp4', { eager: true });
+const videos = Object.values(videoModules);
+---
+
+<div class="carousel-container">
+  <div class="video-wrapper">
+    {videos.map((video, index) => (
+      <video 
+        class={`carousel-video ${index === 0 ? 'active' : ''}`}
+        data-index={index}
+        muted
+        loop
+        playsinline
+        autoplay
+      >
+        <source src={video.default} type="video/mp4" />
+        Tu navegador no soporta videos HTML5.
+      </video>
+    ))}
+  </div>
+
+  <!-- Controles del carrusel - flechas de navegación -->
+  <div class="carousel-controls">
+    <button class="carousel-btn prev" aria-label="Video anterior">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    
+    {videos.length > 1 && (
+      <div class="carousel-dots">
+        {videos.map((_, index) => (
+          <button 
+            class={`dot ${index === 0 ? 'active' : ''}`}
+            data-index={index}
+            aria-label={`Ir al video ${index + 1}`}
+          ></button>
+        ))}
+      </div>
+    )}
+    
+    <button class="carousel-btn next" aria-label="Siguiente video">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Botón de play/pause -->
+  <button class="play-pause-btn" aria-label="Pausar/Reproducir video">
+    <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="4" width="4" height="16"></rect>
+      <rect x="14" y="4" width="4" height="16"></rect>
+    </svg>
+    <svg class="play-icon hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+    </svg>
+  </button>
+
+  <!-- Botón de mute/unmute -->
+  <button class="mute-btn" aria-label="Activar/Desactivar sonido">
+    <svg class="muted-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <line x1="23" y1="9" x2="17" y2="15"></line>
+      <line x1="17" y1="9" x2="23" y2="15"></line>
+    </svg>
+    <svg class="unmuted-icon hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+  </button>
+</div>
+
+<style>
+  .carousel-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+  }
+
+  .carousel-video.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Controles del carrusel */
+  .carousel-controls {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Hacer invisible el contenedor si no hay hover encima (opcional, aqui solo bajamos impacto visual de botones) */
+  
+  .carousel-btn {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5); /* Muy transparente por defecto */
+    transition: all 0.3s ease;
+  }
+
+  .carousel-btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  }
+
+  .carousel-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .carousel-dots {
+    display: flex;
+    gap: 10px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .dot.active {
+    background: white;
+    transform: scale(1.2);
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+  }
+
+  .dot:hover {
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  /* Botón de play/pause */
+  .play-pause-btn {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+
+  .play-pause-btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  }
+
+  .play-pause-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  /* Botón de mute */
+  .mute-btn {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+
+  .mute-btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  }
+
+  .mute-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .carousel-controls {
+      bottom: 20px;
+      gap: 15px;
+    }
+
+    .carousel-btn {
+      width: 40px;
+      height: 40px;
+    }
+
+    .play-pause-btn,
+    .mute-btn {
+      width: 40px;
+      height: 40px;
+      bottom: 20px;
+    }
+
+    .play-pause-btn {
+      left: 20px;
+    }
+
+    .mute-btn {
+      right: 20px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const videos = document.querySelectorAll<HTMLVideoElement>('.carousel-video');
+    const dots = document.querySelectorAll('.dot');
+    const prevBtn = document.querySelector('.prev');
+    const nextBtn = document.querySelector('.next');
+    const playPauseBtn = document.querySelector('.play-pause-btn');
+    const muteBtn = document.querySelector('.mute-btn');
+    const pauseIcon = document.querySelector('.pause-icon');
+    const playIcon = document.querySelector('.play-icon');
+    const mutedIcon = document.querySelector('.muted-icon');
+    const unmutedIcon = document.querySelector('.unmuted-icon');
+    
+    let currentIndex = 0;
+    let isPlaying = true;
+    let isMuted = true;
+
+    function showVideo(index: number) {
+      // Pausar el video actual
+      videos[currentIndex]?.pause();
+      videos[currentIndex]?.classList.remove('active');
+      dots[currentIndex]?.classList.remove('active');
+
+      // Actualizar índice
+      currentIndex = index;
+      if (currentIndex >= videos.length) currentIndex = 0;
+      if (currentIndex < 0) currentIndex = videos.length - 1;
+
+      // Mostrar y reproducir el nuevo video
+      videos[currentIndex]?.classList.add('active');
+      dots[currentIndex]?.classList.add('active');
+      
+      if (isPlaying) {
+        videos[currentIndex]?.play();
+      }
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      
+      if (isPlaying) {
+        videos[currentIndex]?.play();
+        pauseIcon?.classList.remove('hidden');
+        playIcon?.classList.add('hidden');
+      } else {
+        videos[currentIndex]?.pause();
+        pauseIcon?.classList.add('hidden');
+        playIcon?.classList.remove('hidden');
+      }
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      
+      videos.forEach(video => {
+        video.muted = isMuted;
+      });
+
+      if (isMuted) {
+        mutedIcon?.classList.remove('hidden');
+        unmutedIcon?.classList.add('hidden');
+      } else {
+        mutedIcon?.classList.add('hidden');
+        unmutedIcon?.classList.remove('hidden');
+      }
+    }
+
+    // Event listeners
+    prevBtn?.addEventListener('click', () => showVideo(currentIndex - 1));
+    nextBtn?.addEventListener('click', () => showVideo(currentIndex + 1));
+    playPauseBtn?.addEventListener('click', togglePlayPause);
+    muteBtn?.addEventListener('click', toggleMute);
+
+    dots.forEach((dot, index) => {
+      dot.addEventListener('click', () => showVideo(index));
+    });
+
+    // Reproducir el primer video automáticamente
+    if (videos[0]) {
+      videos[0].play().catch(() => {
+        // Autoplay bloqueado por el navegador
+        console.log('Autoplay bloqueado, el usuario debe interactuar primero');
+      });
+    }
+
+    // Navegación con teclado
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') showVideo(currentIndex - 1);
+      if (e.key === 'ArrowRight') showVideo(currentIndex + 1);
+      if (e.key === ' ') {
+        e.preventDefault();
+        togglePlayPause();
+      }
+      if (e.key === 'm' || e.key === 'M') toggleMute();
+    });
+  });
+</script>
