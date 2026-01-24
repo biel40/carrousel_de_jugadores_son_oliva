@@ -80,6 +80,7 @@ const videos = Object.values(videoModules);
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height - mejor para móviles */
     overflow: hidden;
     background: #000;
   }
@@ -111,6 +112,7 @@ const videos = Object.values(videoModules);
   .carousel-controls {
     position: absolute;
     bottom: 40px;
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -120,82 +122,102 @@ const videos = Object.values(videoModules);
     transition: opacity 0.3s ease;
   }
 
-  /* Hacer invisible el contenedor si no hay hover encima (opcional, aqui solo bajamos impacto visual de botones) */
-  
   .carousel-btn {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.3);
     border: none;
     border-radius: 50%;
     width: 50px;
     height: 50px;
+    min-width: 44px; /* Tamaño mínimo táctil recomendado */
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.5); /* Muy transparente por defecto */
+    color: rgba(255, 255, 255, 0.7);
     transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .carousel-btn svg {
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    width: 24px;
+    height: 24px;
   }
 
-  .carousel-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+  .carousel-btn:hover,
+  .carousel-btn:active {
+    background: rgba(255, 255, 255, 0.2);
     color: white;
     transform: scale(1.1);
   }
 
   .carousel-dots {
     display: flex;
-    gap: 10px;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
   }
 
   .dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.4);
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .dot.active {
     background: white;
-    transform: scale(1.2);
-    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+    transform: scale(1.3);
+    box-shadow: 0 0 6px rgba(255,255,255,0.5);
   }
 
-  .dot:hover {
-    background: rgba(255, 255, 255, 0.8);
+  .dot:hover,
+  .dot:active {
+    background: rgba(255, 255, 255, 0.9);
   }
 
   /* Botón de play/pause */
   .play-pause-btn {
     position: absolute;
     bottom: 40px;
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     left: 40px;
-    background: transparent;
+    left: calc(40px + env(safe-area-inset-left, 0px));
+    background: rgba(0, 0, 0, 0.3);
     border: none;
     border-radius: 50%;
     width: 50px;
     height: 50px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.7);
     transition: all 0.3s ease;
     z-index: 10;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .play-pause-btn svg {
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    width: 24px;
+    height: 24px;
   }
 
-  .play-pause-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+  .play-pause-btn:hover,
+  .play-pause-btn:active {
+    background: rgba(255, 255, 255, 0.2);
     color: white;
     transform: scale(1.1);
   }
@@ -204,27 +226,36 @@ const videos = Object.values(videoModules);
   .mute-btn {
     position: absolute;
     bottom: 40px;
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     right: 40px;
-    background: transparent;
+    right: calc(40px + env(safe-area-inset-right, 0px));
+    background: rgba(0, 0, 0, 0.3);
     border: none;
     border-radius: 50%;
     width: 50px;
     height: 50px;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.7);
     transition: all 0.3s ease;
     z-index: 10;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .mute-btn svg {
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    width: 24px;
+    height: 24px;
   }
 
-  .mute-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+  .mute-btn:hover,
+  .mute-btn:active {
+    background: rgba(255, 255, 255, 0.2);
     color: white;
     transform: scale(1.1);
   }
@@ -233,11 +264,132 @@ const videos = Object.values(videoModules);
     display: none;
   }
 
-  /* Responsive */
+  /* Tablets y pantallas medianas */
+  @media (max-width: 1024px) {
+    .carousel-controls {
+      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+      gap: 16px;
+    }
+
+    .play-pause-btn {
+      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+      left: calc(30px + env(safe-area-inset-left, 0px));
+    }
+
+    .mute-btn {
+      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+      right: calc(30px + env(safe-area-inset-right, 0px));
+    }
+  }
+
+  /* Móviles en portrait */
   @media (max-width: 768px) {
     .carousel-controls {
-      bottom: 20px;
-      gap: 15px;
+      bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+      gap: 12px;
+      width: auto;
+      max-width: 80%;
+    }
+
+    .carousel-btn {
+      width: 48px;
+      height: 48px;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .carousel-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .carousel-dots {
+      gap: 10px;
+      padding: 10px 14px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+    }
+
+    .play-pause-btn,
+    .mute-btn {
+      width: 52px;
+      height: 52px;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .play-pause-btn {
+      left: calc(16px + env(safe-area-inset-left, 0px));
+    }
+
+    .mute-btn {
+      right: calc(16px + env(safe-area-inset-right, 0px));
+    }
+
+    .play-pause-btn svg,
+    .mute-btn svg {
+      width: 26px;
+      height: 26px;
+    }
+  }
+
+  /* Móviles pequeños */
+  @media (max-width: 480px) {
+    .carousel-controls {
+      bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+      gap: 8px;
+      max-width: 90%;
+    }
+
+    .carousel-btn {
+      width: 44px;
+      height: 44px;
+    }
+
+    .carousel-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .carousel-dots {
+      gap: 8px;
+      padding: 8px 10px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+    }
+
+    .play-pause-btn,
+    .mute-btn {
+      width: 48px;
+      height: 48px;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .play-pause-btn {
+      left: calc(12px + env(safe-area-inset-left, 0px));
+    }
+
+    .mute-btn {
+      right: calc(12px + env(safe-area-inset-right, 0px));
+    }
+
+    .play-pause-btn svg,
+    .mute-btn svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  /* Móviles en landscape */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .carousel-controls {
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      gap: 10px;
     }
 
     .carousel-btn {
@@ -245,24 +397,88 @@ const videos = Object.values(videoModules);
       height: 40px;
     }
 
-    .play-pause-btn,
-    .mute-btn {
-      width: 40px;
-      height: 40px;
-      bottom: 20px;
+    .carousel-btn svg {
+      width: 18px;
+      height: 18px;
     }
 
-    .play-pause-btn {
-      left: 20px;
-    }
-
-    .mute-btn {
-      right: 20px;
+    .carousel-dots {
+      gap: 6px;
+      padding: 6px 10px;
     }
 
     .dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
+    }
+
+    .play-pause-btn,
+    .mute-btn {
+      width: 44px;
+      height: 44px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .play-pause-btn {
+      left: calc(16px + env(safe-area-inset-left, 0px));
+    }
+
+    .mute-btn {
+      right: calc(16px + env(safe-area-inset-right, 0px));
+    }
+
+    .play-pause-btn svg,
+    .mute-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  /* Pantallas muy altas (como Pixel 10 Pro XL) */
+  @media (min-height: 800px) and (max-width: 500px) {
+    .carousel-controls {
+      bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .play-pause-btn,
+    .mute-btn {
+      bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* Soporte para dispositivos con notch */
+  @supports (padding: max(0px)) {
+    .carousel-controls {
+      bottom: max(40px, calc(40px + env(safe-area-inset-bottom, 0px)));
+    }
+
+    .play-pause-btn {
+      bottom: max(40px, calc(40px + env(safe-area-inset-bottom, 0px)));
+      left: max(40px, calc(40px + env(safe-area-inset-left, 0px)));
+    }
+
+    .mute-btn {
+      bottom: max(40px, calc(40px + env(safe-area-inset-bottom, 0px)));
+      right: max(40px, calc(40px + env(safe-area-inset-right, 0px)));
+    }
+
+    @media (max-width: 768px) {
+      .carousel-controls {
+        bottom: max(100px, calc(100px + env(safe-area-inset-bottom, 0px)));
+      }
+
+      .play-pause-btn,
+      .mute-btn {
+        bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));
+      }
+
+      .play-pause-btn {
+        left: max(16px, calc(16px + env(safe-area-inset-left, 0px)));
+      }
+
+      .mute-btn {
+        right: max(16px, calc(16px + env(safe-area-inset-right, 0px)));
+      }
     }
   }
 </style>
