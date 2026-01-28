@@ -76,6 +76,32 @@ npm run list-videos
 - El `<script>` contiene lógica de cliente
 - Los estilos son scoped por defecto
 
+## ⚡ Notas importantes de Astro 5.x
+
+### Modo de salida (output)
+- En Astro 5.x, el modo `hybrid` ha sido **eliminado**
+- Usar `output: 'static'` (por defecto), que ahora soporta endpoints dinámicos
+- Los endpoints con `export const prerender = false` se ejecutan en el servidor
+
+### Variables de entorno
+- Astro **NO** carga automáticamente variables de `.env.local` sin prefijo `PUBLIC_`
+- Las variables sin prefijo `PUBLIC_` solo están disponibles en el servidor
+- Para desarrollo local con endpoints que usan `process.env`, hay que:
+  1. Usar `dotenv` manualmente en el endpoint, o
+  2. Pasar `--env-file=.env.local` en el script de dev (puede no funcionar)
+  
+```typescript
+// Ejemplo: cargar dotenv en desarrollo dentro del endpoint
+if (import.meta.env.DEV) {
+  const dotenv = await import('dotenv');
+  dotenv.config({ path: '.env.local' });
+}
+```
+
+### Despliegue en Vercel
+- Vercel inyecta automáticamente las variables de entorno configuradas en el dashboard
+- No es necesario el workaround de dotenv en producción
+
 ## 🔧 Funcionalidades Clave
 
 ### Sistema de Precarga

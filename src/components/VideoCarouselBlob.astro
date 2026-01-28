@@ -251,7 +251,10 @@ const categories = [...new Set(videos.map((v) => v.category))];
     width: 100%;
     height: 100%;
   }
+</style>
 
+<!-- Estilos globales para videos creados dinámicamente -->
+<style is:global>
   .carousel-video {
     position: absolute;
     top: 0;
@@ -268,7 +271,9 @@ const categories = [...new Set(videos.map((v) => v.category))];
     opacity: 1;
     pointer-events: auto;
   }
+</style>
 
+<style>
   /* Controles del carrusel */
   .carousel-controls {
     position: absolute;

@@ -1,10 +1,29 @@
 import type { APIRoute } from 'astro';
 import { list } from '@vercel/blob';
 
+// Cargar variables de entorno en desarrollo
+if (import.meta.env.DEV) {
+  const dotenv = await import('dotenv');
+  dotenv.config({ path: '.env.local' });
+}
+
 export const prerender = false;
 
 export const GET: APIRoute = async () => {
   try {
+    // Verificar que el token está disponible
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      console.error('BLOB_READ_WRITE_TOKEN no está configurado');
+      return new Response(JSON.stringify({ 
+        error: 'Token de Blob no configurado',
+        hint: 'Asegúrate de tener BLOB_READ_WRITE_TOKEN en las variables de entorno'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // Listar todos los blobs que empiecen con "videos/"
     const { blobs } = await list({ prefix: 'videos/' });
     
