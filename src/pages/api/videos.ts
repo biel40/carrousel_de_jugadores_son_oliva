@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { list, type ListBlobResultBlob } from '@vercel/blob';
+import { list, type ListBlobResultBlob, type ListBlobResult } from '@vercel/blob';
 
 // Cargar variables de entorno en desarrollo
 if (import.meta.env.DEV) {
@@ -30,7 +30,7 @@ export const GET: APIRoute = async () => {
     let cursor: string | undefined = undefined;
     
     do {
-      const response = await list({ 
+      const response: ListBlobResult = await list({ 
         prefix: 'videos/',
         cursor,
         limit: 1000, // Máximo por página
