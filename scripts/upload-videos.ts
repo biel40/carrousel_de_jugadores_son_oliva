@@ -1,11 +1,14 @@
 // Script para subir videos a Vercel Blob
 // Ejecutar con: npx tsx scripts/upload-videos.ts
+// Usar --compressed para subir desde la carpeta de videos comprimidos
 
 import { put, list } from '@vercel/blob';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const VIDEOS_DIR = './src/assets/videos';
+// Detectar si se pasa --compressed como argumento
+const useCompressed = process.argv.includes('--compressed');
+const VIDEOS_DIR = useCompressed ? './src/assets/videos-compressed' : './src/assets/videos';
 
 interface UploadResult {
   localPath: string;
@@ -33,6 +36,10 @@ async function getAllVideoFiles(dir: string): Promise<string[]> {
 async function uploadVideos() {
   console.log('🎬 Iniciando subida de videos a Vercel Blob...\n');
   
+  if (useCompressed) {
+    console.log('📦 Modo: Subiendo videos COMPRIMIDOS\n');
+  }
+  
   // Verificar que existe el token
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     console.error('❌ Error: BLOB_READ_WRITE_TOKEN no está configurado');
@@ -40,9 +47,18 @@ async function uploadVideos() {
     process.exit(1);
   }
   
+  // Verificar que existe el directorio
+  if (!fs.existsSync(VIDEOS_DIR)) {
+    console.error(`❌ Error: No existe el directorio ${VIDEOS_DIR}`);
+    if (useCompressed) {
+      console.error('   Ejecuta primero: npm run compress-videos');
+    }
+    process.exit(1);
+  }
+  
   // Obtener todos los videos
   const videoFiles = await getAllVideoFiles(VIDEOS_DIR);
-  console.log(`📁 Encontrados ${videoFiles.length} videos\n`);
+  console.log(`📁 Encontrados ${videoFiles.length} videos en ${VIDEOS_DIR}\n`);
   
   // Listar blobs existentes para evitar duplicados
   const existingBlobs = await list();

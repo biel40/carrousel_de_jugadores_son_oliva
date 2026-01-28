@@ -8,7 +8,10 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "compress-videos": "tsx scripts/compress-videos.ts",
+    "clear-blob": "tsx --env-file=.env.local scripts/clear-blob.ts",
     "upload-videos": "tsx --env-file=.env.local scripts/upload-videos.ts",
+    "upload-compressed": "tsx --env-file=.env.local scripts/upload-videos.ts --compressed",
     "list-videos": "tsx --env-file=.env.local scripts/list-videos.ts"
   },
   "dependencies": {

@@ -20,6 +20,7 @@ pnpm-debug.log*
 
 # Videos locales (usar Vercel Blob en producción)
 src/assets/videos/
+src/assets/videos-compressed/
 
 # macOS-specific files
 .DS_Store
