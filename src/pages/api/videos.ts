@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { list } from '@vercel/blob';
+import { list, type ListBlobResultBlob } from '@vercel/blob';
 
 // Cargar variables de entorno en desarrollo
 if (import.meta.env.DEV) {
@@ -24,8 +24,23 @@ export const GET: APIRoute = async () => {
       });
     }
 
-    // Listar todos los blobs que empiecen con "videos/"
-    const { blobs } = await list({ prefix: 'videos/' });
+    // Listar TODOS los blobs usando paginación
+    // La API de Vercel Blob puede paginar los resultados
+    const allBlobs: ListBlobResultBlob[] = [];
+    let cursor: string | undefined = undefined;
+    
+    do {
+      const response = await list({ 
+        prefix: 'videos/',
+        cursor,
+        limit: 1000, // Máximo por página
+      });
+      
+      allBlobs.push(...response.blobs);
+      cursor = response.cursor;
+    } while (cursor);
+    
+    const blobs = allBlobs;
     
     // Transformar los blobs a la estructura que necesitamos
     const videos = blobs
@@ -59,6 +74,8 @@ export const GET: APIRoute = async () => {
       }
       return a.fileName.localeCompare(b.fileName);
     });
+    
+    console.log(`📊 API /api/videos: Devolviendo ${videos.length} videos de ${blobs.length} blobs totales`);
     
     return new Response(JSON.stringify(videos), {
       status: 200,
