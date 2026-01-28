@@ -1,0 +1,794 @@
+---
+// VideoCarousel con soporte para Vercel Blob
+// Los videos se cargan dinámicamente desde la API
+
+// Para desarrollo/fallback: usar videos locales si existen
+const useLocalVideos = import.meta.env.DEV && !import.meta.env.BLOB_READ_WRITE_TOKEN;
+
+interface VideoInfo {
+  src: string;
+  category: string;
+  categoryOrder: number;
+  fileName: string;
+}
+
+let videos: VideoInfo[] = [];
+
+if (useLocalVideos) {
+  // Modo desarrollo sin Blob - usar videos locales
+  const videoModules = import.meta.glob<{ default: string }>(
+    "../assets/videos/**/*.mp4",
+    { eager: true },
+  );
+
+  videos = Object.entries(videoModules).map(([path, module]) => {
+    const parts = path.split("/");
+    const fileName = parts[parts.length - 1].replace(".mp4", "");
+    const categoryFolder = parts[parts.length - 2];
+    const orderMatch = categoryFolder.match(/^(\d+)\./);
+    const categoryOrder = orderMatch ? parseInt(orderMatch[1]) : 999;
+    const categoryName = categoryFolder.replace(/^\d+\.\s*/, "");
+
+    return {
+      src: module.default,
+      category: categoryName,
+      categoryOrder,
+      fileName,
+    };
+  });
+
+  videos.sort((a, b) => {
+    if (a.categoryOrder !== b.categoryOrder) {
+      return a.categoryOrder - b.categoryOrder;
+    }
+    return a.fileName.localeCompare(b.fileName);
+  });
+}
+
+// Las categorías se obtienen de los videos (estáticas o dinámicas)
+const categories = [...new Set(videos.map((v) => v.category))];
+---
+
+<div class="carousel-container">
+  <!-- Pantalla de carga -->
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loading-text">Cargando videos...</div>
+      <div class="loading-progress">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="loading-count">
+        <span id="loaded-count">0</span> / <span id="total-count">?</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="video-wrapper" id="video-wrapper">
+    {/* Si hay videos locales, renderizarlos estáticamente */}
+    {videos.map((video, index) => (
+      <video
+        class={`carousel-video ${index === 0 ? "active" : ""}`}
+        data-index={index}
+        data-category={video.category}
+        data-player={video.fileName}
+        data-src={video.src}
+        preload="none"
+        muted
+        playsinline
+      >
+        Tu navegador no soporta videos HTML5.
+      </video>
+    ))}
+  </div>
+
+  <!-- Controles del carrusel - flechas de navegación -->
+  <div class="carousel-controls">
+    <button class="carousel-btn prev" aria-label="Video anterior">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+
+    <!-- Contador compacto -->
+    <div class="video-counter">
+      <span id="current-video-num">1</span>
+      <span class="separator">/</span>
+      <span id="total-videos">{videos.length || '?'}</span>
+    </div>
+
+    <button class="carousel-btn next" aria-label="Siguiente video">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Botón de play/pause -->
+  <button class="play-pause-btn" aria-label="Pausar/Reproducir video">
+    <svg
+      class="pause-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <rect x="6" y="4" width="4" height="16"></rect>
+      <rect x="14" y="4" width="4" height="16"></rect>
+    </svg>
+    <svg
+      class="play-icon hidden"
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+    </svg>
+  </button>
+</div>
+
+<!-- Pasar datos del servidor al cliente -->
+<script define:vars={{ serverVideos: videos, useLocalVideos }}>
+  window.__CAROUSEL_CONFIG__ = {
+    serverVideos,
+    useLocalVideos,
+  };
+</script>
+
+<style>
+  .carousel-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* Pantalla de carga */
+  .loading-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+
+  .loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .loading-content {
+    text-align: center;
+    color: white;
+  }
+
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-text {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  .loading-progress {
+    width: 200px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0 auto 10px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: white;
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 3px;
+  }
+
+  .loading-count {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .carousel-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+  }
+
+  .carousel-video.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Controles del carrusel */
+  .carousel-controls {
+    position: absolute;
+    bottom: 40px;
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+    transition: opacity 0.3s ease;
+  }
+
+  .carousel-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .carousel-btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    width: 24px;
+    height: 24px;
+  }
+
+  .carousel-btn:hover,
+  .carousel-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  /* Contador de videos compacto */
+  .video-counter {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+    font-size: 1rem;
+    color: white;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    backdrop-filter: blur(4px);
+  }
+
+  .video-counter .separator {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Botón de play/pause */
+  .play-pause-btn {
+    position: absolute;
+    bottom: 40px;
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    left: 40px;
+    left: calc(40px + env(safe-area-inset-left, 0px));
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+    z-index: 10;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .play-pause-btn svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    width: 24px;
+    height: 24px;
+  }
+
+  .play-pause-btn:hover,
+  .play-pause-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  /* Tablets y pantallas medianas */
+  @media (max-width: 1024px) {
+    .carousel-controls {
+      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+      gap: 16px;
+    }
+
+    .play-pause-btn {
+      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+      left: calc(30px + env(safe-area-inset-left, 0px));
+    }
+  }
+
+  /* Móviles en portrait */
+  @media (max-width: 768px) {
+    .carousel-controls {
+      bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+      gap: 12px;
+    }
+
+    .carousel-btn {
+      width: 48px;
+      height: 48px;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .carousel-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .video-counter {
+      font-size: 0.9rem;
+      padding: 6px 12px;
+    }
+
+    .play-pause-btn {
+      width: 52px;
+      height: 52px;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .play-pause-btn {
+      left: calc(16px + env(safe-area-inset-left, 0px));
+    }
+
+    .play-pause-btn svg {
+      width: 26px;
+      height: 26px;
+    }
+  }
+
+  /* Móviles pequeños */
+  @media (max-width: 480px) {
+    .carousel-controls {
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      gap: 8px;
+    }
+
+    .carousel-btn {
+      width: 44px;
+      height: 44px;
+    }
+
+    .carousel-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .video-counter {
+      font-size: 0.85rem;
+      padding: 5px 10px;
+    }
+
+    .play-pause-btn {
+      width: 48px;
+      height: 48px;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .play-pause-btn {
+      left: calc(12px + env(safe-area-inset-left, 0px));
+    }
+
+    .play-pause-btn svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  /* Móviles en landscape */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .carousel-controls {
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      gap: 10px;
+    }
+
+    .carousel-btn {
+      width: 40px;
+      height: 40px;
+    }
+
+    .carousel-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .video-counter {
+      font-size: 0.8rem;
+      padding: 4px 8px;
+    }
+
+    .play-pause-btn {
+      width: 44px;
+      height: 44px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .play-pause-btn {
+      left: calc(16px + env(safe-area-inset-left, 0px));
+    }
+
+    .play-pause-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  /* Pantallas muy altas */
+  @media (min-height: 800px) and (max-width: 500px) {
+    .carousel-controls {
+      bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .play-pause-btn {
+      bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* Soporte para dispositivos con notch */
+  @supports (padding: max(0px)) {
+    .carousel-controls {
+      bottom: max(40px, calc(40px + env(safe-area-inset-bottom, 0px)));
+    }
+
+    .play-pause-btn {
+      bottom: max(40px, calc(40px + env(safe-area-inset-bottom, 0px)));
+      left: max(40px, calc(40px + env(safe-area-inset-left, 0px)));
+    }
+
+    @media (max-width: 768px) {
+      .carousel-controls {
+        bottom: max(100px, calc(100px + env(safe-area-inset-bottom, 0px)));
+      }
+
+      .play-pause-btn {
+        bottom: max(24px, calc(24px + env(safe-area-inset-bottom, 0px)));
+      }
+
+      .play-pause-btn {
+        left: max(16px, calc(16px + env(safe-area-inset-left, 0px)));
+      }
+    }
+  }
+</style>
+
+<script>
+  interface VideoInfo {
+    src: string;
+    category: string;
+    categoryOrder: number;
+    fileName: string;
+  }
+
+  interface CarouselConfig {
+    serverVideos: VideoInfo[];
+    useLocalVideos: boolean;
+  }
+
+  declare global {
+    interface Window {
+      __CAROUSEL_CONFIG__: CarouselConfig;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const videoWrapper = document.getElementById("video-wrapper");
+    const prevBtn = document.querySelector(".prev");
+    const nextBtn = document.querySelector(".next");
+    const playPauseBtn = document.querySelector(".play-pause-btn");
+    const pauseIcon = document.querySelector(".pause-icon");
+    const playIcon = document.querySelector(".play-icon");
+    const currentVideoNumEl = document.getElementById("current-video-num");
+    const totalVideosEl = document.getElementById("total-videos");
+    
+    // Elementos de carga
+    const loadingScreen = document.getElementById("loading-screen");
+    const loadingText = document.getElementById("loading-text");
+    const progressBar = document.getElementById("progress-bar");
+    const loadedCountEl = document.getElementById("loaded-count");
+    const totalCountEl = document.getElementById("total-count");
+
+    let currentIndex = 0;
+    let isPlaying = true;
+    let allVideosLoaded = false;
+    let videosData: VideoInfo[] = [];
+
+    // Obtener configuración del servidor
+    const config = window.__CAROUSEL_CONFIG__;
+
+    // Función para obtener videos de la API
+    async function fetchVideosFromAPI(): Promise<VideoInfo[]> {
+      try {
+        const response = await fetch('/api/videos');
+        if (!response.ok) throw new Error('Error fetching videos');
+        return await response.json();
+      } catch (error) {
+        console.error('Error obteniendo videos de la API:', error);
+        return [];
+      }
+    }
+
+    // Función para crear elementos de video dinámicamente
+    function createVideoElements(videos: VideoInfo[]) {
+      if (!videoWrapper) return;
+      
+      // Limpiar videos existentes si los hay
+      videoWrapper.innerHTML = '';
+      
+      videos.forEach((video, index) => {
+        const videoEl = document.createElement('video');
+        videoEl.className = `carousel-video ${index === 0 ? 'active' : ''}`;
+        videoEl.dataset.index = String(index);
+        videoEl.dataset.category = video.category;
+        videoEl.dataset.player = video.fileName;
+        videoEl.dataset.src = video.src;
+        videoEl.preload = 'none';
+        videoEl.muted = true;
+        videoEl.playsInline = true;
+        videoEl.textContent = 'Tu navegador no soporta videos HTML5.';
+        
+        videoWrapper.appendChild(videoEl);
+      });
+    }
+
+    // Función para precargar un video
+    function preloadVideo(video: HTMLVideoElement): Promise<void> {
+      return new Promise((resolve) => {
+        const src = video.dataset.src;
+        if (!src) {
+          resolve();
+          return;
+        }
+
+        if (video.readyState >= 3) {
+          resolve();
+          return;
+        }
+
+        video.src = src;
+        
+        const onReady = () => {
+          video.removeEventListener('canplaythrough', onReady);
+          video.removeEventListener('error', onError);
+          resolve();
+        };
+        
+        const onError = () => {
+          video.removeEventListener('canplaythrough', onReady);
+          video.removeEventListener('error', onError);
+          console.warn(`Error cargando video: ${src}`);
+          resolve();
+        };
+
+        video.addEventListener('canplaythrough', onReady);
+        video.addEventListener('error', onError);
+        
+        video.load();
+      });
+    }
+
+    // Precargar todos los videos
+    async function preloadAllVideos() {
+      const videos = document.querySelectorAll<HTMLVideoElement>(".carousel-video");
+      const totalVideos = videos.length;
+      let loadedCount = 0;
+
+      const batchSize = 3;
+      
+      for (let i = 0; i < totalVideos; i += batchSize) {
+        const batch = Array.from(videos).slice(i, i + batchSize);
+        
+        await Promise.all(batch.map(async (video) => {
+          await preloadVideo(video);
+          loadedCount++;
+          
+          const progress = (loadedCount / totalVideos) * 100;
+          if (progressBar) progressBar.style.width = `${progress}%`;
+          if (loadedCountEl) loadedCountEl.textContent = String(loadedCount);
+        }));
+      }
+
+      allVideosLoaded = true;
+      loadingScreen?.classList.add('hidden');
+      
+      if (videos[0]) {
+        videos[0].currentTime = 0;
+        videos[0].play().catch(() => {
+          console.log("Autoplay bloqueado, el usuario debe interactuar primero");
+        });
+      }
+    }
+
+    function updateCounter() {
+      if (currentVideoNumEl) {
+        currentVideoNumEl.textContent = String(currentIndex + 1);
+      }
+    }
+
+    function showVideo(index: number) {
+      if (!allVideosLoaded) return;
+      
+      const videos = document.querySelectorAll<HTMLVideoElement>(".carousel-video");
+      
+      const prevVideo = videos[currentIndex];
+      if (prevVideo) {
+        prevVideo.pause();
+        prevVideo.currentTime = 0;
+        prevVideo.classList.remove("active");
+      }
+
+      currentIndex = index;
+      if (currentIndex >= videos.length) currentIndex = 0;
+      if (currentIndex < 0) currentIndex = videos.length - 1;
+
+      const currentVideo = videos[currentIndex];
+      if (currentVideo) {
+        currentVideo.classList.add("active");
+        currentVideo.currentTime = 0;
+        
+        if (isPlaying) {
+          currentVideo.play().catch(() => {
+            console.log("No se pudo reproducir");
+          });
+        }
+      }
+
+      updateCounter();
+    }
+
+    function togglePlayPause() {
+      const videos = document.querySelectorAll<HTMLVideoElement>(".carousel-video");
+      isPlaying = !isPlaying;
+      const currentVideo = videos[currentIndex];
+
+      if (isPlaying) {
+        currentVideo?.play();
+        pauseIcon?.classList.remove("hidden");
+        playIcon?.classList.add("hidden");
+      } else {
+        currentVideo?.pause();
+        pauseIcon?.classList.add("hidden");
+        playIcon?.classList.remove("hidden");
+      }
+    }
+
+    // Event listeners
+    prevBtn?.addEventListener("click", () => showVideo(currentIndex - 1));
+    nextBtn?.addEventListener("click", () => showVideo(currentIndex + 1));
+    playPauseBtn?.addEventListener("click", togglePlayPause);
+
+    document.addEventListener("keydown", (e) => {
+      if (!allVideosLoaded) return;
+      
+      if (e.key === "ArrowLeft") showVideo(currentIndex - 1);
+      if (e.key === "ArrowRight") showVideo(currentIndex + 1);
+      if (e.key === " ") {
+        e.preventDefault();
+        togglePlayPause();
+      }
+    });
+
+    // Inicialización
+    async function init() {
+      // Si ya tenemos videos del servidor (modo local), usarlos directamente
+      if (config.serverVideos && config.serverVideos.length > 0) {
+        videosData = config.serverVideos;
+        if (totalCountEl) totalCountEl.textContent = String(videosData.length);
+        if (totalVideosEl) totalVideosEl.textContent = String(videosData.length);
+        await preloadAllVideos();
+      } else {
+        // Obtener videos desde la API (Vercel Blob)
+        if (loadingText) loadingText.textContent = 'Obteniendo lista de videos...';
+        
+        videosData = await fetchVideosFromAPI();
+        
+        if (videosData.length === 0) {
+          if (loadingText) loadingText.textContent = 'No se encontraron videos';
+          return;
+        }
+        
+        if (loadingText) loadingText.textContent = 'Cargando videos...';
+        if (totalCountEl) totalCountEl.textContent = String(videosData.length);
+        if (totalVideosEl) totalVideosEl.textContent = String(videosData.length);
+        
+        // Crear elementos de video dinámicamente
+        createVideoElements(videosData);
+        
+        // Precargar videos
+        await preloadAllVideos();
+      }
+    }
+
+    init();
+  });
+</script>

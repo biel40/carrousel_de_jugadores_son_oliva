@@ -1,9 +1,11 @@
 ---
-import VideoCarousel from '../components/VideoCarousel.astro';
+// Usar VideoCarouselBlob para cargar videos desde Vercel Blob
+// VideoCarousel original sigue disponible si necesitas fallback local
+import VideoCarouselBlob from '../components/VideoCarouselBlob.astro';
 import Layout from '../layouts/Layout.astro';
 
 ---
 
 <Layout>
-	<VideoCarousel />
+	<VideoCarouselBlob />
 </Layout>

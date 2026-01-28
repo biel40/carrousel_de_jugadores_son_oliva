@@ -15,7 +15,11 @@ pnpm-debug.log*
 
 # environment variables
 .env
+.env.local
 .env.production
+
+# Videos locales (usar Vercel Blob en producción)
+src/assets/videos/
 
 # macOS-specific files
 .DS_Store

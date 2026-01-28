@@ -2,34 +2,60 @@
 
 ## 📋 Descripción del Proyecto
 
-Este es un carrusel de videos a pantalla completa desarrollado con **Astro** para mostrar videos de jugadores del club Son Oliva. Los videos se organizan por categorías (equipos) y se precargan completamente al iniciar la aplicación.
+Este es un carrusel de videos a pantalla completa desarrollado con **Astro** para mostrar videos de jugadores del club Son Oliva. Los videos se almacenan en **Vercel Blob** y se cargan dinámicamente.
 
 ## 🏗️ Arquitectura
 
 ### Stack Tecnológico
-- **Framework**: Astro 5.x
+- **Framework**: Astro 5.x con adaptador Vercel
 - **Lenguaje**: TypeScript
 - **Estilos**: CSS puro con variables CSS
-- **Videos**: MP4 importados dinámicamente con `import.meta.glob`
+- **Almacenamiento de Videos**: Vercel Blob
+- **Despliegue**: Vercel
 
 ### Componentes Principales
 
-#### `VideoCarousel.astro`
-Componente principal que maneja:
-- Importación dinámica de videos desde `src/assets/videos/**/*.mp4`
-- Ordenación por categoría (número en nombre de carpeta) y nombre de archivo
+#### `VideoCarouselBlob.astro` (Principal)
+Componente que maneja:
+- Carga dinámica de videos desde Vercel Blob via API
+- Fallback a videos locales en desarrollo
 - Sistema de precarga con pantalla de loading y barra de progreso
 - Controles de navegación (flechas, play/pause)
 - Navegación por teclado
 - Diseño responsive con múltiples breakpoints
 
-### Estructura de Videos
+#### `VideoCarousel.astro` (Legacy)
+Versión original que usa videos locales con `import.meta.glob`
+
+#### `/api/videos.ts`
+Endpoint que lista videos desde Vercel Blob
+
+### Estructura de Videos en Vercel Blob
 ```
-src/assets/videos/
+videos/
 ├── [número]. [Categoría]/
 │   └── [número] [Nombre Jugador].mp4
 ```
-Ejemplo: `1. Alevin A/05 Maria Martin.mp4`
+Ejemplo: `videos/1. Alevin A/05 Maria Martin.mp4`
+
+## 🎬 Gestión de Videos
+
+### Subir videos a Vercel Blob
+```bash
+npm run upload-videos
+```
+Requiere `BLOB_READ_WRITE_TOKEN` en `.env.local`
+
+### Listar videos en Vercel Blob
+```bash
+npm run list-videos
+```
+
+### Configurar Token
+1. Ve a Vercel Dashboard → Storage → Crear Blob Store
+2. Copia el `BLOB_READ_WRITE_TOKEN`
+3. Añádelo a `.env.local` para desarrollo local
+4. Vercel lo inyecta automáticamente en producción
 
 ## 🎯 Convenciones de Código
 
