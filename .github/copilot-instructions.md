@@ -42,8 +42,10 @@ Ejemplo: `videos/1. Alevin A/05 Maria Martin.mp4`
 
 ### Subir videos a Vercel Blob
 ```bash
-npm run upload-videos
+npm run upload-compressed
 ```
+> ⚠️ **IMPORTANTE**: Usar SIEMPRE `npm run upload-compressed` para subir videos desde la carpeta `videos-compressed`. El Blob Storage de Vercel tiene almacenamiento limitado, por lo que solo se deben subir videos comprimidos y optimizados.
+
 Requiere `BLOB_READ_WRITE_TOKEN` en `.env.local`
 
 ### Listar videos en Vercel Blob
@@ -63,6 +65,9 @@ npm run list-videos
 - Usar tipos explícitos para interfaces (`VideoInfo`)
 - Preferir `const` sobre `let` cuando sea posible
 - Usar optional chaining (`?.`) para accesos seguros
+- **No añadir comentarios adicionales** en métodos o funciones salvo que sean imprescindibles
+- **Documentar con JSDoc** todo lo posible en métodos (descripción, parámetros, retorno, ejemplos si es relevante)
+- **Sube al blob solo los videos optimizados y comprimidos en .mp4**
 
 ### CSS
 - Usar `rem` para tamaños de fuente
